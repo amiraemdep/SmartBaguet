@@ -1,0 +1,295 @@
+<div class="baguet-app">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────── -->
+  <div class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">🏭</span>
+        <div>
+          <h1>SmartBaguet</h1>
+          <p>Système de traçabilité des plants</p>
+        </div>
+        <div>
+
+        <a routerLink="/scan"></a>
+                </div>
+
+      </div>
+    </div>
+    <div class="header-right">
+      @if (baguetStatus()) {
+        <div class="status-badge" [class.charge]="baguetStatus() === 'CHARGE'"
+             [class.vide]="baguetStatus() === 'VIDE'">
+          {{ baguetStatus() === 'CHARGE' ? '🔴 CHARGÉ' : '🟢 VIDE' }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── TABS ───────────────────────────────────────────────────── -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab() === 'mariage'"
+            (click)="setTab('mariage')">
+      <span class="tab-icon">🔗</span>
+      Mariage (Chargement)
+    </button>
+    <button class="tab" [class.active]="activeTab() === 'vider'"
+            (click)="setTab('vider')">
+      <span class="tab-icon">📤</span>
+      Vider (Déchargement)
+    </button>
+     <button class="tab" [class.active]="activeTab() === 'vider'"
+        (click)="setTab('vider')">
+  <span class="tab-icon">📤</span>
+  SCAN CODE (Déchargement)
+</button>
+  </div>
+
+  <div class="content">
+    <div class="main-panel">
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- TAB MARIAGE                                               -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      @if (activeTab() === 'mariage') {
+        <div class="panel">
+          <div class="panel-header green">
+            <span class="panel-icon">🟢</span>
+            <div>
+              <h2>Chargement — Mariage Baguet ↔ Plant</h2>
+              <p>Scannez le baguet puis le plant</p>
+            </div>
+          </div>
+
+          <form [formGroup]="mariageForm" (ngSubmit)="onMariage()" class="scan-form">
+
+            <!-- Scan Baguet -->
+            <div class="scan-field">
+              <label class="scan-label">
+                <span class="step-num">1</span>
+                Code Baguet
+              </label>
+              <div class="input-wrap">
+                <span class="input-icon">🏷️</span>
+                <input
+                  formControlName="codeBaguet"
+                  class="scan-input"
+                  placeholder="Scanner ou saisir le code baguet…"
+                  autocomplete="off"
+                  autofocus
+                />
+              </div>
+              @if (mariageForm.get('codeBaguet')?.invalid && mariageForm.get('codeBaguet')?.touched) {
+                <span class="field-error">Code baguet requis</span>
+              }
+            </div>
+
+            <!-- Scan Plant -->
+            <div class="scan-field">
+              <label class="scan-label">
+                <span class="step-num">2</span>
+                Code Plant
+              </label>
+              <div class="input-wrap">
+                <span class="input-icon">🌱</span>
+                <input
+                  formControlName="codePlant"
+                  class="scan-input"
+                  placeholder="Scanner ou saisir le code plant…"
+                  autocomplete="off"
+                />
+              </div>
+              @if (mariageForm.get('codePlant')?.invalid && mariageForm.get('codePlant')?.touched) {
+                <span class="field-error">Code plant requis</span>
+              }
+            </div>
+
+            <!-- Client (optionnel — premier passage) -->
+            <div class="client-toggle">
+              <button type="button" class="btn-link" (click)="toggleClient()">
+                {{ showClient() ? '▼' : '▶' }} Nouveau plant ? Saisir le client
+                <span class="badge-opt">optionnel</span>
+              </button>
+            </div>
+
+            @if (showClient()) {
+              <div class="scan-field slide-in">
+                <label class="scan-label">
+                  <span class="step-num">3</span>
+                  Client
+                </label>
+                <div class="input-wrap">
+                  <span class="input-icon">👤</span>
+                  <input
+                    formControlName="client"
+                    class="scan-input"
+                    placeholder="Nom du client…"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+            }
+
+            <!-- Bouton -->
+            <button type="submit" class="btn-action green" [disabled]="mariageInvalid">
+              @if (loading()) {
+                <span class="spinner"></span>
+                Traitement…
+              } @else {
+                🔗 Effectuer le Mariage
+              }
+            </button>
+
+          </form>
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- TAB VIDER                                                 -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      @if (activeTab() === 'vider') {
+        <div class="panel">
+          <div class="panel-header red">
+            <span class="panel-icon">📤</span>
+            <div>
+              <h2>Déchargement — Vider le Baguet</h2>
+              <p>Scannez uniquement le plant</p>
+            </div>
+          </div>
+
+          <form [formGroup]="viderForm" (ngSubmit)="onVider()" class="scan-form">
+
+            <div class="scan-field">
+              <label class="scan-label">
+                <span class="step-num">1</span>
+                Code Plant
+              </label>
+              <div class="input-wrap">
+                <span class="input-icon">🌱</span>
+                <input
+                  formControlName="codePlant"
+                  class="scan-input"
+                  placeholder="Scanner le code plant à retirer…"
+                  autocomplete="off"
+                  autofocus
+                />
+              </div>
+              @if (viderForm.get('codePlant')?.invalid && viderForm.get('codePlant')?.touched) {
+                <span class="field-error">Code plant requis</span>
+              }
+            </div>
+
+            <div class="info-box">
+              <span>ℹ️</span>
+              Le baguet associé sera automatiquement libéré et prêt pour un nouveau plant.
+            </div>
+
+            <button type="submit" class="btn-action red" [disabled]="viderInvalid">
+              @if (loading()) {
+                <span class="spinner"></span>
+                Traitement…
+              } @else {
+                📤 Vider le Baguet
+              }
+            </button>
+
+          </form>
+        </div>
+      }
+      @if (activeTab() === 'scan') {
+
+  <div class="panel">
+
+    <div class="panel-header blue">
+      <span class="panel-icon">📸</span>
+
+      <div>
+        <h2>Scanner Production</h2>
+        <p>Scanner un baguet ou un plant</p>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="card">
+        <zxing-scanner
+          (scanSuccess)="onScan($event)">
+        </zxing-scanner>
+      </div>
+
+      @if (data) {
+
+        <div class="card result-scan">
+
+          <h3>📦 Baguet: {{data.codeBaguet}}</h3>
+
+          <p>🌿 Plant: {{data.codePlant}}</p>
+
+          <p>👤 Client: {{data.client}}</p>
+
+          <p>📊 Status: {{data.status}}</p>
+
+        </div>
+      }
+
+    </div>
+
+  </div>
+}
+      <!-- ── RÉSULTAT ─────────────────────────────────────────────── -->
+      @if (lastResult()) {
+        <div class="result-card" [class.result-green]="lastResult().type === 'mariage'"
+             [class.result-red]="lastResult().type === 'vider'">
+          <div class="result-icon">
+            {{ lastResult().type === 'mariage' ? '✅' : '✅' }}
+          </div>
+          <div class="result-body">
+            <strong>{{ lastResult().message }}</strong>
+            @if (lastResult().client) {
+              <p>👤 Client : <strong>{{ lastResult().client }}</strong></p>
+            }
+            @if (lastResult().codeBaguet) {
+              <p>🏷️ Baguet libéré : <strong>{{ lastResult().codeBaguet }}</strong></p>
+            }
+          </div>
+        </div>
+      }
+
+    </div>
+
+    <!-- ── HISTORIQUE ───────────────────────────────────────────── -->
+    <div class="history-panel">
+      <div class="history-header">
+        <h3>📊 Historique récent</h3>
+        <button class="btn-refresh" (click)="loadHistory()" title="Rafraîchir">🔄</button>
+      </div>
+
+      @if (history().length === 0) {
+        <div class="history-empty">Aucun enregistrement</div>
+      }
+
+      @for (item of history(); track item.codeBaguet + item.dateEntree) {
+        <div class="history-item" [class.active]="!item.dateSortie">
+          <div class="history-top">
+            <span class="history-baguet">🏷️ {{ item.codeBaguet }}</span>
+            <span class="history-plant">🌱 {{ item.codePlant }}</span>
+            <span class="history-status" [class.status-charge]="!item.dateSortie"
+                  [class.status-vide]="item.dateSortie">
+              {{ item.dateSortie ? '🟢 VIDÉ' : '🔴 EN COURS' }}
+            </span>
+          </div>
+          <div class="history-dates">
+            <span>↓ {{ formatDate(item.dateEntree) }}</span>
+            @if (item.dateSortie) {
+              <span>↑ {{ formatDate(item.dateSortie) }}</span>
+            }
+          </div>
+          @if (item.client) {
+            <div class="history-client">👤 {{ item.client }}</div>
+          }
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

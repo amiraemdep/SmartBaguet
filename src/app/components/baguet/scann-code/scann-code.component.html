@@ -1,0 +1,16 @@
+<div class="container">
+
+  <h2>📸 Scanner Production</h2>
+
+  <div class="card">
+    <zxing-scanner (scanSuccess)="onScan($event)"></zxing-scanner>
+  </div>
+
+  <div class="card" *ngIf="data">
+    <h3>📦 Baguet: {{data.codeBaguet}}</h3>
+    <p>🌿 Plant: {{data.codePlant}}</p>
+    <p>👤 Client: {{data.client}}</p>
+    <p>📊 Status: {{data.status}}</p>
+  </div>
+
+</div>
