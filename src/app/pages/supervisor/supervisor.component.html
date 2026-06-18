@@ -1,5 +1,3 @@
-bash
-
 <div class="sup-app">
 
   <!-- ── HEADER ───────────────────────────────────────────────── -->
@@ -15,15 +13,15 @@ bash
       <span class="conn" [class.on]="isOnline()" [class.off]="!isOnline()">
         {{ isOnline() ? '🟢' : '🔴' }}
       </span>
-      <button class="btn-op" >👷 Opérateur</button>
+      <button class="btn-op" (click)="goOperator()">👷 Opérateur</button>
     </div>
   </div>
 
   <!-- ── TABS ──────────────────────────────────────────────────── -->
   <div class="tabs">
-    <button class="tab" [class.active]="activeTab() === 'scan'"      (click)="setTab('scan')">📷 Scan</button>
-    <button class="tab" [class.active]="activeTab() === 'dashboard'" (click)="setTab('dashboard')">📊 Dashboard</button>
-    <button class="tab" [class.active]="activeTab() === 'history'"   (click)="setTab('history')">📋 Historique</button>
+    <button class="tab" [class.active]="activeTab() === 'scan'"      >📷 Scan</button>
+    <button class="tab" [class.active]="activeTab() === 'dashboard'" >📊 Dashboard</button>
+    <button class="tab" [class.active]="activeTab() === 'history'"   >📋 Historique</button>
   </div>
 
   <div class="content">
@@ -51,7 +49,60 @@ bash
           @if (lastScan()) {
             <small class="last">Dernier scan : {{ lastScan() }}</small>
           }
+</div>
+  <div class="camera-card">
+
+    <div class="camera-header">
+      <h3>📷 Scan Caméra</h3>
+
+      <div class="camera-actions">
+        @if (!cameraActive()) {
+          <button class="cam-btn start" (click)="startCamera()">
+            ▶️ Démarrer caméra
+          </button>
+        } @else {
+          <button class="cam-btn stop" (click)="stopCamera()">
+            ⏹️ Stop
+          </button>
+        }
+
+
+      </div>
+    </div>
+
+    @if (cameraError()) {
+      <div class="camera-error">
+        {{ cameraError() }}
+      </div>
+    }
+
+    <div class="video-wrapper">
+
+      <video
+        #videoEl
+        autoplay
+        playsinline
+        muted
+        class="camera-video">
+      </video>
+
+      <canvas #canvasEl hidden></canvas>
+
+      @if (cameraActive()) {
+        <div class="scan-overlay">
+          <div class="scan-line"></div>
         </div>
+      }
+
+    </div>
+
+    @if (cameraActive()) {
+      <div class="camera-status success">
+        ✅ Caméra active — scanner un code-barres
+      </div>
+    }
+
+  </div>
 
         <!-- Résultat scan -->
         @if (scanResult()) {
@@ -76,7 +127,12 @@ bash
                 <div class="info-grid">
                   <div class="info"><span>🌱 Plant</span><strong>{{ scanResult()!.codePlant || '—' }}</strong></div>
                   <div class="info"><span>👤 Client</span><strong>{{ scanResult()!.client || '—' }}</strong></div>
-
+                  @if (scanResult()!.ot) {
+                    <div class="info"><span>📋 OT</span><strong>{{ scanResult()!.ot }}</strong></div>
+                  }
+                  @if (scanResult()!.item) {
+                    <div class="info"><span>📦 Item</span><strong>{{ scanResult()!.item }}</strong></div>
+                  }
                   <div class="info"><span>⏱️ Entrée</span><strong>{{ formatDate(scanResult()!.dateEntree) }}</strong></div>
                 </div>
               } @else {

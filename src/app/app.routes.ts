@@ -3,19 +3,20 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'baguet',
+    redirectTo: 'operator',
     pathMatch: 'full'
   },
   {
-    path: 'baguet',
+    path: 'operator',
     loadComponent: () =>
       import('./components/baguet/baguet.component')
         .then(m => m.BaguetComponent)
   },
-   {
-    path: 'scan',
+
+    {
+    path: 'supervisor',
     loadComponent: () =>
-      import('./components/baguet/scann-code/scann-code.component')
-        .then(m => m.ScannCodeComponent)
-  }
+      import('./pages/supervisor/supervisor.component')
+        .then(m => m.SupervisorComponent)
+  },
 ];

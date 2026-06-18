@@ -15,7 +15,7 @@ interface MarriageDto {
 }
 
 interface HistoryItem {
-  codeBaguet: string;
+  codeBaguet: string
   codePlant: string;
   client?: string;
   dateEntree: string;
