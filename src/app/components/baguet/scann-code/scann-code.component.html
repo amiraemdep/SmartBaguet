@@ -35,7 +35,7 @@ bash
       <div class="scan-section">
         <div class="scan-box">
           <div class="scan-ico">🔍</div>
-          <p>Scanner un baguet ou un plant pour voir ses infos</p>
+          <p>Scanner un baguet ou un plan pour voir ses infos</p>
           <form [formGroup]="scanForm" (ngSubmit)="onScan()" class="scan-form">
             <div class="scan-wrap" [class.scanning]="scanning()">
               <input formControlName="code" class="scan-input"
@@ -74,7 +74,7 @@ bash
               </div>
               @if (scanResult()!.status === 'CHARGE') {
                 <div class="info-grid">
-                  <div class="info"><span>🌱 Plant</span><strong>{{ scanResult()!.codePlant || '—' }}</strong></div>
+                  <div class="info"><span>📋 Plan</span><strong>{{ scanResult()!.codePlant || '—' }}</strong></div>
                   <div class="info"><span>👤 Client</span><strong>{{ scanResult()!.client || '—' }}</strong></div>
 
                   <div class="info"><span>⏱️ Entrée</span><strong>{{ formatDate(scanResult()!.dateEntree) }}</strong></div>
@@ -88,8 +88,8 @@ bash
           @if (scanResult()!.type === 'plant') {
             <div class="res-card res-plant" (click)="scanResult.set(null)">
               <div class="res-top">
-                <span class="res-ico">🌱</span>
-                <div><strong>Plant {{ scanResult()!.codePlant }}</strong></div>
+                <span class="res-ico"></span>
+                <div><strong>Plan {{ scanResult()!.codePlant }}</strong></div>
               </div>
               <div class="info-grid">
                 <div class="info"><span>🏷️ Baguet</span><strong>{{ scanResult()!.codeBaguet || '—' }}</strong></div>
@@ -128,7 +128,7 @@ bash
           </div>
           <div class="kpi kpi-orange">
             <span class="kpi-v">{{ stats()?.plantsAujourdhui ?? '…' }}</span>
-            <span class="kpi-l">Plants/Jour</span>
+            <span class="kpi-l">Plans/Jour</span>
           </div>
         </div>
 
@@ -167,7 +167,7 @@ bash
           <div class="hist-item" [class.en-cours]="!item.dateSortie">
             <div class="hist-top">
               <span class="hist-code">🏷️ {{ item.codeBaguet }}</span>
-              <span class="hist-plant">🌱 {{ item.codePlant }}</span>
+              <span class="hist-plant"> 📋{{ item.codePlant }}</span>
               <span class="hist-status" [class.hs-red]="!item.dateSortie" [class.hs-green]="item.dateSortie">
                 {{ item.dateSortie ? '✅ Terminé' : '🔴 En cours' }}
               </span>

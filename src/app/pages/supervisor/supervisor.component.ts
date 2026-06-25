@@ -1,410 +1,129 @@
-import { Component, OnInit, OnDestroy, signal, inject, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import {
+  Component, signal, inject, ChangeDetectorRef,
+  ViewChild, ElementRef, AfterViewInit, OnDestroy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Subject, interval } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-type Tab = 'scan' | 'dashboard' | 'history' | 'alerts';
-import { Html5Qrcode } from 'html5-qrcode';
-interface ScanResult {
-  type: string;
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
+
+interface BaguetResult {
+  type: 'success' | 'vide' | 'warning' | 'error';
   codeBaguet?: string;
   codePlant?: string;
   client?: string;
-  status?: string;
-  dateEntree?: string;
-  message?: string;
   ot?: string;
   item?: string;
-}
-
-interface ScanResult {
-    type: string;
-  codeBaguet?: string;
-  codePlant?: string;
-  client?: string;
+  ordre?: string;
+  typeContrepartie?: string;
   status?: string;
-  dateEntree?: string;
   message?: string;
-  ot?: string;
-  item?: string;
-}
-
-interface Stats {
-  totalBaguets: number;
-  baguetsCharges: number;
-  baguetsVides: number;
-  plantsAujourdhui: number;
-}
-
-interface HistoryItem {
-  codeBaguet: string;
-  codePlant: string;
-  client?: string;
-  dateEntree: string;
-  dateSortie?: string;
-}
-
-interface Alert {
-  id: number;
-  type: 'error' | 'warning' | 'success';
-  message: string;
-  time: string;
-}
-
-declare var BarcodeDetector: any;
-interface HistoryItem {
-  codeBaguet: string; codePlant: string;
-  client?: string; dateEntree: string; dateSortie?: string;
-}
-
-interface Stats {
-  totalBaguets: number; baguetsCharges: number;
-  baguetsVides: number; plantsAujourdhui: number;
 }
 
 @Component({
   selector: 'app-supervisor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule],
   templateUrl: './supervisor.component.html',
   styleUrl: './supervisor.component.scss'
 })
-export class SupervisorComponent implements OnInit, OnDestroy, AfterViewInit {
+export class SupervisorComponent implements AfterViewInit, OnDestroy {
 
-    @ViewChild('videoEl')
-  videoEl!: ElementRef<HTMLVideoElement>;
-  @ViewChild('canvasEl')
-  canvasEl!: ElementRef<HTMLCanvasElement>;
+  // ⚠️ Mets ici l'IP réelle de ton PC (ipconfig → carte Wi-Fi), PAS localhost
+  private readonly API = 'https://172.16.37.36:7128/api/baguet';
 
-  private stream: MediaStream | null = null;
+  @ViewChild('videoEl') videoEl!: ElementRef<HTMLVideoElement>;
 
-  private barcodeDetector: any = null;
+  private http   = inject(HttpClient);
+  private cdr    = inject(ChangeDetectorRef);
+  private router = inject(Router);
 
-  private scanInterval: any = null;
-  @ViewChild('canvasEl')
-  private http    = inject(HttpClient);
-  private fb      = inject(FormBuilder);
-  private cdr     = inject(ChangeDetectorRef);
-  private router  = inject(Router);
-  private destroy$ = new Subject<void>();
- cameraActive = signal(false);
+  private codeReader = new BrowserMultiFormatReader();
+  private scanningPaused = false;
 
-  alerts = signal<Alert[]>([]);
+  scanning      = signal(false);
+  result        = signal<BaguetResult | null>(null);
+  lastSearch    = signal('');
+  cameraActive  = signal(false);
+  cameraError   = signal('');
 
-  alertCount = signal(0);
-  cameraError = signal('');
+  // =====================================================
+  // LIFECYCLE
+  // =====================================================
 
-  private readonly API = 'http://localhost:5139/api/baguet';
-
-  activeTab   = signal<'scan' | 'dashboard' | 'history'>('scan');
-  scanning    = signal(false);
-  scanResult  = signal<ScanResult | null>(null);
-  stats       = signal<Stats | null>(null);
-  history     = signal<HistoryItem[]>([]);
-  lastScan    = signal('');
-  isOnline    = signal(navigator.onLine);
-  manualMode = signal(false);
-
-  scanForm = this.fb.group({
-    code: ['', Validators.required]
-  });
-
-  ngOnInit() {
-    this.loadStats();
-    this.loadHistory();
-    interval(15000).pipe(takeUntil(this.destroy$))
-      .subscribe(() => { this.loadStats(); this.loadHistory(); });
-    window.addEventListener('online',  () => { this.isOnline.set(true);  this.cdr.detectChanges(); });
-    window.addEventListener('offline', () => { this.isOnline.set(false); this.cdr.detectChanges(); });
-  this.loadAll();
-
-    this.startAutoRefresh();
-
-    window.addEventListener('online', () => {
-      this.isOnline.set(true);
-      this.cdr.detectChanges();
-    });
-
-    window.addEventListener('offline', () => {
-      this.isOnline.set(false);
-      this.cdr.detectChanges();
-    });
-
-  }
   ngAfterViewInit(): void {
-
-    setTimeout(() => {
-      this.startCamera();
-    }, 300);
-
+    setTimeout(() => this.startCamera(), 300);
   }
+
   ngOnDestroy(): void {
-
     this.stopCamera();
-
-    this.destroy$.next();
-
-    this.destroy$.complete();
-
   }
 
-  onScan() {
-    if (this.scanForm.invalid) return;
-    const code = this.scanForm.value.code!.trim().toUpperCase();
-    this.scanning.set(true);
-    this.scanResult.set(null);
-    if ('vibrate' in navigator) navigator.vibrate(40);
+  // =====================================================
+  // CAMERA + SCAN (ZXing gère caméra ET décodage en continu)
+  // =====================================================
 
-    this.http.get<any>(`${this.API}/info/${code}`).subscribe({
-      next: (res) => {
-        this.scanning.set(false);
-        this.scanResult.set(res);
-        this.lastScan.set(new Date().toLocaleTimeString('fr-FR'));
-        if ('vibrate' in navigator) navigator.vibrate([40,20,40]);
-        this.scanForm.reset();
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.scanning.set(false);
-        this.scanResult.set({ type: 'error', message: `Code "${code}" introuvable` });
-        if ('vibrate' in navigator) navigator.vibrate([80,40,80,40,80]);
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-
-
-
-
-  get taux() {
-    const s = this.stats();
-    if (!s || !s.totalBaguets) return 0;
-    return Math.round((s.baguetsCharges / s.totalBaguets) * 100);
-  }
-
-
- async startCamera(): Promise<void> {
+  async startCamera(): Promise<void> {
+    this.cameraError.set('');
 
     try {
+      // Liste des caméras disponibles, on préfère celle arrière ("environment")
+      const devices = await this.codeReader.listVideoInputDevices();
+      const backCamera = devices.find(d =>
+        /back|rear|environment/i.test(d.label)
+      ) || devices[devices.length - 1];
 
-      this.cameraError.set('');
+      const deviceId = backCamera ? backCamera.deviceId : undefined;
 
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: {
-            ideal: 'environment'
-          },
-          width: {
-            ideal: 1280
-          },
-          height: {
-            ideal: 720
+      await this.codeReader.decodeFromVideoDevice(
+        deviceId ?? null,
+        this.videoEl.nativeElement,
+        (result, err) => {
+          if (this.scanningPaused) return;
+
+          if (result) {
+            const code = result.getText();
+            console.log('✅ CODE DÉTECTÉ PAR ZXING:', code);
+            this.onCodeDetected(code);
           }
-        },
-        audio: false
-      });
-
-  if (this.videoEl?.nativeElement) {
-
-  const video = this.videoEl.nativeElement;
-
-  video.srcObject = this.stream;
-
-  video.setAttribute('playsinline', 'true');
-
-  video.muted = true;
-
-  await video.play();
-
-  this.cameraActive.set(true);
-
-  this.cdr.detectChanges();
-
-  this.startBarcodeDetection();
-}
-
-    } catch (error) {
-
-      console.error(error);
-
-      this.cameraError.set(
-        'Caméra inaccessible — utilisez le mode manuel'
+          // NotFoundException est normal : ça veut juste dire "rien détecté sur cette frame"
+          if (err && !(err instanceof NotFoundException)) {
+            console.error('Erreur scan:', err);
+          }
+        }
       );
 
-      this.manualMode.set(true);
+      console.log('✅ Caméra et scanner ZXing démarrés avec succès');
 
-      this.cameraActive.set(false);
-
+      this.cameraActive.set(true);
       this.cdr.detectChanges();
 
+    } catch (error) {
+      console.error('Erreur startCamera:', error);
+      this.cameraError.set('Caméra inaccessible — vérifiez les permissions et HTTPS');
+      this.cameraActive.set(false);
+      this.cdr.detectChanges();
     }
-
   }
 
   stopCamera(): void {
-
-    if (this.scanInterval) {
-
-      clearInterval(this.scanInterval);
-
-      this.scanInterval = null;
-
-    }
-
-    if (this.stream) {
-
-      this.stream.getTracks().forEach(track => {
-        track.stop();
-      });
-
-      this.stream = null;
-
-    }
-
+    this.codeReader.reset();
     this.cameraActive.set(false);
-
   }
 
-  // =====================================================
-  // BARCODE
-  // =====================================================
+  private onCodeDetected(code: string): void {
+    if (this.scanning() || this.scanningPaused) return;
 
-  private startBarcodeDetection(): void {
+    this.scanningPaused = true;
 
-    if ('BarcodeDetector' in window) {
+    if ('vibrate' in navigator) navigator.vibrate([50, 30, 50]);
 
-      this.barcodeDetector = new BarcodeDetector({
-        formats: [
-          'qr_code',
-          'code_128',
-          'code_39',
-          'ean_13',
-          'ean_8',
-          'data_matrix'
-        ]
-      });
+    this.lookupCode(code.trim().toUpperCase());
 
-      this.scanInterval = setInterval(() => {
-        this.detectBarcode();
-      }, 500);
-
-    } else {
-
-      console.warn('BarcodeDetector non supporté');
-
-      this.manualMode.set(true);
-
-    }
-
-  }
-
-  private async detectBarcode(): Promise<void> {
-
-    if (!this.videoEl?.nativeElement) {
-      return;
-    }
-
-    if (!this.barcodeDetector) {
-      return;
-    }
-
-    const video = this.videoEl.nativeElement;
-
-    if (video.readyState !== 4) {
-      return;
-    }
-
-    try {
-
-      const barcodes =
-        await this.barcodeDetector.detect(video);
-
-      if (barcodes.length > 0) {
-
-        const code = barcodes[0].rawValue;
-
-        if (code) {
-
-          this.onCodeDetected(code);
-
-        }
-
-      }
-
-    } catch (error) {
-
-      console.error(error);
-
-    }
-
-  }
-
-  // =====================================================
-  // CODE DETECTED
-  // =====================================================
-
-  onCodeDetected(code: string): void {
-
-    if (this.scanning()) {
-      return;
-    }
-
-    if (this.scanInterval) {
-      clearInterval(this.scanInterval);
-    }
-
-    const cleanCode = code.trim().toUpperCase();
-
-    if ('vibrate' in navigator) {
-
-      navigator.vibrate([
-        50,
-        30,
-        50
-      ]);
-
-    }
-
-    this.lookupCode(cleanCode);
-
+    // Reprend le scan après 3s (pour scanner un nouveau baguet)
     setTimeout(() => {
-
-      if (this.cameraActive()) {
-
-        this.startBarcodeDetection();
-
-      }
-
+      this.scanningPaused = false;
     }, 3000);
-
-  }
-
-  // =====================================================
-  // MANUAL
-  // =====================================================
-
-  onManualScan(): void {
-
-    if (this.scanForm.invalid) {
-      return;
-    }
-
-    const code =
-      this.scanForm.value.code
-        ?.trim()
-        .toUpperCase();
-
-    if (!code) {
-      return;
-    }
-
-    this.lookupCode(code);
-
-    this.scanForm.reset();
-
   }
 
   // =====================================================
@@ -412,205 +131,34 @@ export class SupervisorComponent implements OnInit, OnDestroy, AfterViewInit {
   // =====================================================
 
   private lookupCode(code: string): void {
-
     this.scanning.set(true);
-
-    this.scanResult.set(null);
-
-    this.http
-      .get<any>(`${this.API}/info/${code}`)
-      .subscribe({
-
-        next: (response) => {
-
-          this.scanning.set(false);
-
-          this.scanResult.set(response);
-
-          this.lastScan.set(
-            new Date().toLocaleTimeString('fr-FR')
-          );
-
-          this.cdr.detectChanges();
-
-        },
-
-        error: () => {
-
-          this.scanning.set(false);
-
-          this.scanResult.set({
-            type: 'error',
-            message: `"${code}" introuvable`
-          });
-
-          if ('vibrate' in navigator) {
-
-            navigator.vibrate([
-              100,
-              50,
-              100
-            ]);
-
-          }
-
-          this.cdr.detectChanges();
-
-        }
-
-      });
-
+    this.result.set(null);
+    this.http.get<any>(`${this.API}/by-baguet/${code}`).subscribe({
+      next: (response) => {
+        this.scanning.set(false);
+        this.result.set(response);
+        this.lastSearch.set(new Date().toLocaleTimeString('fr-FR'));
+        if ('vibrate' in navigator) navigator.vibrate([40, 20, 40]);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.scanning.set(false);
+        const msg = err.status === 0
+          ? 'Connexion au serveur impossible — vérifiez réseau / HTTPS / CORS'
+          : `Baguet "${code}" introuvable`;
+        this.result.set({ type: 'error', message: msg });
+        if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  // =====================================================
-  // CLEAR
-  // =====================================================
-
-  clearScan(): void {
-
-    this.scanResult.set(null);
-
-    if (this.cameraActive()) {
-
-      this.startBarcodeDetection();
-
-    }
-
+  clearResult(): void {
+    this.result.set(null);
+    this.scanningPaused = false;
   }
 
-  // =====================================================
-  // DATA
-  // =====================================================
-
-  loadAll(): void {
-
-    this.loadStats();
-
-    this.loadHistory();
-
-    this.loadAlerts();
-
+  goOperator(): void {
+    this.router.navigate(['/operator']);
   }
-
-  loadStats(): void {
-
-    this.http
-      .get<Stats>(`${this.API}/stats`)
-      .subscribe({
-
-        next: (data) => {
-          this.stats.set(data);
-        },
-
-        error: (error) => {
-          console.error(error);
-        }
-
-      });
-
-  }
-
-  loadHistory(): void {
-
-    this.http
-      .get<HistoryItem[]>(`${this.API}/history`)
-      .subscribe({
-
-        next: (data) => {
-
-          this.history.set(
-            data.slice(0, 30)
-          );
-
-        },
-
-        error: (error) => {
-          console.error(error);
-        }
-
-      });
-
-  }
-
-  loadAlerts(): void {
-
-    this.http
-      .get<Alert[]>(`${this.API}/alerts`)
-      .subscribe({
-
-        next: (data) => {
-
-          this.alerts.set(data);
-
-          this.alertCount.set(
-            data.filter(a => a.type === 'error').length
-          );
-
-        },
-
-        error: (error) => {
-          console.error(error);
-        }
-
-      });
-
-  }
-
-  startAutoRefresh(): void {
-
-    interval(15000)
-      .pipe(
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => {
-
-        this.loadAll();
-
-      });
-
-  }
-
-  // =====================================================
-  // TABS
-  // =====================================================
-
-
-  toggleManual(): void {
-
-    this.manualMode.update(value => !value);
-
-  }
-
-  // =====================================================
-  // HELPERS
-  // =====================================================
-
-  formatDate(date?: string): string {
-
-    if (!date) {
-      return '—';
-    }
-
-    return new Date(date)
-      .toLocaleString('fr-FR');
-
-  }
-
-
-  get tauxClass(): string {
-
-    if (this.taux > 80) {
-      return 'high';
-    }
-
-    if (this.taux > 50) {
-      return 'med';
-    }
-
-    return 'low';
-
-  }
-
-
-  goOperator() { this.router.navigate(['/operator']); }
 }

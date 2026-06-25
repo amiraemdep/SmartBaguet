@@ -4,10 +4,14 @@
   <div class="app-header">
     <div class="header-left">
       <div class="logo">
-        <span class="logo-icon">🏭</span>
-        <div>
-          <h1>SmartBaguet</h1>
-          <p>Système de traçabilité des plants</p>
+<img
+  src="assets/emde.png"
+  alt="EMDEP"
+  class="logo-icon"
+/>
+<div>
+          <h1>EMDEP</h1>
+          <p>Système de traçabilité des plans</p>
         </div>
         <div>
 
@@ -38,11 +42,7 @@
       <span class="tab-icon">📤</span>
       Vider (Déchargement)
     </button>
-     <button class="tab" [class.active]="activeTab() === 'vider'"
-        (click)="setTab('vider')">
-  <span class="tab-icon">📤</span>
-  SCAN CODE (Déchargement)
-</button>
+
   </div>
 
   <div class="content">
@@ -56,8 +56,8 @@
           <div class="panel-header green">
             <span class="panel-icon">🟢</span>
             <div>
-              <h2>Chargement — Mariage Baguet ↔ Plant</h2>
-              <p>Scannez le baguet puis le plant</p>
+              <h2>Chargement — Mariage Baguet ↔ Plan</h2>
+              <p>Scannez le baguet puis le plan</p>
             </div>
           </div>
 
@@ -88,26 +88,26 @@
             <div class="scan-field">
               <label class="scan-label">
                 <span class="step-num">2</span>
-                Code Plant
+                Code Plan
               </label>
               <div class="input-wrap">
-                <span class="input-icon">🌱</span>
+                <span class="input-icon">📋</span>
                 <input
                   formControlName="codePlant"
                   class="scan-input"
-                  placeholder="Scanner ou saisir le code plant…"
+                  placeholder="Scanner ou saisir le code plan…"
                   autocomplete="off"
                 />
               </div>
               @if (mariageForm.get('codePlant')?.invalid && mariageForm.get('codePlant')?.touched) {
-                <span class="field-error">Code plant requis</span>
+                <span class="field-error">Code plan requis</span>
               }
             </div>
 
             <!-- Client (optionnel — premier passage) -->
             <div class="client-toggle">
               <button type="button" class="btn-link" (click)="toggleClient()">
-                {{ showClient() ? '▼' : '▶' }} Nouveau plant ? Saisir le client
+                {{ showClient() ? '▼' : '▶' }} Nouveau plan ? Saisir le client
                 <span class="badge-opt">optionnel</span>
               </button>
             </div>
@@ -162,10 +162,10 @@
             <div class="scan-field">
               <label class="scan-label">
                 <span class="step-num">1</span>
-                Code Plant
+                Code Plan
               </label>
               <div class="input-wrap">
-                <span class="input-icon">🌱</span>
+                <span class="input-icon">📋</span>
                 <input
                   formControlName="codePlant"
                   class="scan-input"
@@ -175,13 +175,13 @@
                 />
               </div>
               @if (viderForm.get('codePlant')?.invalid && viderForm.get('codePlant')?.touched) {
-                <span class="field-error">Code plant requis</span>
+                <span class="field-error">Code plan requis</span>
               }
             </div>
 
             <div class="info-box">
               <span>ℹ️</span>
-              Le baguet associé sera automatiquement libéré et prêt pour un nouveau plant.
+              Le baguet associé sera automatiquement libéré et prêt pour un nouveau plan.
             </div>
 
             <button type="submit" class="btn-action red" [disabled]="viderInvalid">
@@ -205,7 +205,7 @@
 
       <div>
         <h2>Scanner Production</h2>
-        <p>Scanner un baguet ou un plant</p>
+        <p>Scanner un baguet ou un plan</p>
       </div>
     </div>
 
@@ -223,7 +223,7 @@
 
           <h3>📦 Baguet: {{data.codeBaguet}}</h3>
 
-          <p>🌿 Plant: {{data.codePlant}}</p>
+          <p>📋 Plan: {{data.codePlan}}</p>
 
           <p>👤 Client: {{data.client}}</p>
 
@@ -272,7 +272,7 @@
         <div class="history-item" [class.active]="!item.dateSortie">
           <div class="history-top">
             <span class="history-baguet">🏷️ {{ item.codeBaguet }}</span>
-            <span class="history-plant">🌱 {{ item.codePlant }}</span>
+            <span class="history-plant">📋 {{ item.codePlant }}</span>
             <span class="history-status" [class.status-charge]="!item.dateSortie"
                   [class.status-vide]="item.dateSortie">
               {{ item.dateSortie ? '🟢 VIDÉ' : '🔴 EN COURS' }}

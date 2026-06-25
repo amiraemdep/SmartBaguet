@@ -1,244 +1,119 @@
 <div class="sup-app">
 
-  <!-- ── HEADER ───────────────────────────────────────────────── -->
+  <!-- HEADER -->
   <div class="sup-header">
     <div class="header-left">
-      <span class="logo">👨‍💼</span>
+      <img
+  src="assets/emde.png"
+  alt="EMDEP"
+  class="logo-icon"
+/>
       <div>
-        <h1>Chef Production</h1>
-        <p>Supervision Live</p>
+        <h1>EMDEP</h1>
+        <p>Scan Baguet</p>
       </div>
     </div>
-    <div class="header-right">
-      <span class="conn" [class.on]="isOnline()" [class.off]="!isOnline()">
-        {{ isOnline() ? '🟢' : '🔴' }}
-      </span>
-      <button class="btn-op" (click)="goOperator()">👷 Opérateur</button>
-    </div>
+    <button class="btn-op" (click)="goOperator()">👷 Opérateur</button>
   </div>
 
-  <!-- ── TABS ──────────────────────────────────────────────────── -->
-  <div class="tabs">
-    <button class="tab" [class.active]="activeTab() === 'scan'"      >📷 Scan</button>
-    <button class="tab" [class.active]="activeTab() === 'dashboard'" >📊 Dashboard</button>
-    <button class="tab" [class.active]="activeTab() === 'history'"   >📋 Historique</button>
-  </div>
-
-  <div class="content">
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!-- SCAN                                          -->
-    <!-- ══════════════════════════════════════════════ -->
-    @if (activeTab() === 'scan') {
-      <div class="scan-section">
-        <div class="scan-box">
-          <div class="scan-ico">🔍</div>
-          <p>Scanner un baguet ou un plant pour voir ses infos</p>
-          <form [formGroup]="scanForm" (ngSubmit)="onScan()" class="scan-form">
-            <div class="scan-wrap" [class.scanning]="scanning()">
-              <input formControlName="code" class="scan-input"
-                     placeholder="Code baguet ou plant…"
-                     autocapitalize="characters" autocomplete="off" autofocus />
-              @if (scanning()) {
-                <span class="spin"></span>
-              } @else {
-                <button type="submit" class="scan-go" [disabled]="scanForm.invalid">🔍</button>
-              }
-            </div>
-          </form>
-          @if (lastScan()) {
-            <small class="last">Dernier scan : {{ lastScan() }}</small>
-          }
-</div>
+  <!-- CAMERA -->
   <div class="camera-card">
-
     <div class="camera-header">
-      <h3>📷 Scan Caméra</h3>
-
-      <div class="camera-actions">
-        @if (!cameraActive()) {
-          <button class="cam-btn start" (click)="startCamera()">
-            ▶️ Démarrer caméra
-          </button>
-        } @else {
-          <button class="cam-btn stop" (click)="stopCamera()">
-            ⏹️ Stop
-          </button>
-        }
-
-
-      </div>
+      <h3>📷 Scanner un baguet</h3>
     </div>
 
     @if (cameraError()) {
-      <div class="camera-error">
-        {{ cameraError() }}
-      </div>
+      <div class="camera-error">{{ cameraError() }}</div>
     }
 
     <div class="video-wrapper">
-
-      <video
-        #videoEl
-        autoplay
-        playsinline
-        muted
-        class="camera-video">
-      </video>
-
-      <canvas #canvasEl hidden></canvas>
+      <video #videoEl autoplay playsinline muted class="camera-video"></video>
 
       @if (cameraActive()) {
         <div class="scan-overlay">
+          <div class="scan-frame"></div>
           <div class="scan-line"></div>
         </div>
       }
-
     </div>
 
-    @if (cameraActive()) {
-      <div class="camera-status success">
-        ✅ Caméra active — scanner un code-barres
-      </div>
+    @if (cameraActive() && !scanning()) {
+      <p class="camera-hint">✅ Centrez le code-barre du baguet</p>
     }
-
+    @if (scanning()) {
+      <p class="camera-hint">🔄 Recherche en cours…</p>
+    }
   </div>
 
-        <!-- Résultat scan -->
-        @if (scanResult()) {
-          @if (scanResult()!.type === 'error') {
-            <div class="res-card res-error" (click)="scanResult.set(null)">
-              <span class="res-ico">❌</span>
-              <div><strong>Introuvable</strong><p>{{ scanResult()!.message }}</p></div>
-            </div>
-          }
-          @if (scanResult()!.type === 'baguet') {
-            <div class="res-card" [class.res-charge]="scanResult()!.status==='CHARGE'"
-                 [class.res-vide]="scanResult()!.status==='VIDE'" (click)="scanResult.set(null)">
-              <div class="res-top">
-                <span class="res-ico">{{ scanResult()!.status==='CHARGE' ? '🔴' : '🟢' }}</span>
-                <div>
-                  <strong>Baguet {{ scanResult()!.codeBaguet }}</strong>
-                  <span class="pill" [class.pill-r]="scanResult()!.status==='CHARGE'"
-                        [class.pill-g]="scanResult()!.status==='VIDE'">{{ scanResult()!.status }}</span>
-                </div>
-              </div>
-              @if (scanResult()!.status === 'CHARGE') {
-                <div class="info-grid">
-                  <div class="info"><span>🌱 Plant</span><strong>{{ scanResult()!.codePlant || '—' }}</strong></div>
-                  <div class="info"><span>👤 Client</span><strong>{{ scanResult()!.client || '—' }}</strong></div>
-                  @if (scanResult()!.ot) {
-                    <div class="info"><span>📋 OT</span><strong>{{ scanResult()!.ot }}</strong></div>
-                  }
-                  @if (scanResult()!.item) {
-                    <div class="info"><span>📦 Item</span><strong>{{ scanResult()!.item }}</strong></div>
-                  }
-                  <div class="info"><span>⏱️ Entrée</span><strong>{{ formatDate(scanResult()!.dateEntree) }}</strong></div>
-                </div>
-              } @else {
-                <p class="libre">✅ Baguet disponible</p>
-              }
-              <small class="close-hint">Appuyer pour fermer</small>
-            </div>
-          }
-          @if (scanResult()!.type === 'plant') {
-            <div class="res-card res-plant" (click)="scanResult.set(null)">
-              <div class="res-top">
-                <span class="res-ico">🌱</span>
-                <div><strong>Plant {{ scanResult()!.codePlant }}</strong></div>
-              </div>
-              <div class="info-grid">
-                <div class="info"><span>🏷️ Baguet</span><strong>{{ scanResult()!.codeBaguet || '—' }}</strong></div>
-                <div class="info"><span>👤 Client</span><strong>{{ scanResult()!.client || '—' }}</strong></div>
-                <div class="info"><span>⏱️ Entrée</span><strong>{{ formatDate(scanResult()!.dateEntree) }}</strong></div>
-              </div>
-              <small class="close-hint">Appuyer pour fermer</small>
-            </div>
-          }
-        }
+  @if (lastSearch()) {
+    <small class="last">Dernière recherche : {{ lastSearch() }}</small>
+  }
+
+  <!-- RESULT -->
+  @if (result()) {
+
+    @if (result()!.type === 'error') {
+      <div class="res-card res-error" (click)="clearResult()">
+        <span class="res-ico">❌</span>
+        <div>
+          <strong>Erreur</strong>
+          <p>{{ result()!.message }}</p>
+        </div>
       </div>
     }
 
-    <!-- ══════════════════════════════════════════════ -->
-    <!-- DASHBOARD                                     -->
-    <!-- ══════════════════════════════════════════════ -->
-    @if (activeTab() === 'dashboard') {
-      <div class="dash-section">
-        <div class="dash-header">
-          <h2>Production en direct</h2>
-          <button class="btn-ref" (click)="loadStats()">🔄</button>
+    @if (result()!.type === 'vide' || result()!.type === 'warning') {
+      <div class="res-card res-vide" (click)="clearResult()">
+        <span class="res-ico">🟢</span>
+        <div>
+          <strong>Baguet {{ result()!.codeBaguet }}</strong>
+          <p>{{ result()!.message }}</p>
         </div>
-
-        <div class="kpi-grid">
-          <div class="kpi kpi-blue">
-            <span class="kpi-v">{{ stats()?.totalBaguets ?? '…' }}</span>
-            <span class="kpi-l">Total Baguets</span>
-          </div>
-          <div class="kpi kpi-red">
-            <span class="kpi-v">{{ stats()?.baguetsCharges ?? '…' }}</span>
-            <span class="kpi-l">🔴 Chargés</span>
-          </div>
-          <div class="kpi kpi-green">
-            <span class="kpi-v">{{ stats()?.baguetsVides ?? '…' }}</span>
-            <span class="kpi-l">🟢 Vides</span>
-          </div>
-          <div class="kpi kpi-orange">
-            <span class="kpi-v">{{ stats()?.plantsAujourdhui ?? '…' }}</span>
-            <span class="kpi-l">Plants/Jour</span>
-          </div>
-        </div>
-
-        <div class="taux-card">
-          <div class="taux-row">
-            <span>Taux d'occupation</span>
-            <strong>{{ taux }}%</strong>
-          </div>
-          <div class="bar"><div class="bar-fill" [style.width.%]="taux"
-               [class.high]="taux>80" [class.med]="taux>50&&taux<=80" [class.low]="taux<=50"></div></div>
-          <p class="taux-txt">
-            @if (taux > 80) { ⚠️ Forte occupation }
-            @else if (taux > 50) { 🟡 Occupation normale }
-            @else { 🟢 Bonne disponibilité }
-          </p>
-        </div>
-        <p class="auto-ref">🔄 Actualisation automatique toutes les 15 sec</p>
+        <small class="close-hint">Appuyer pour fermer</small>
       </div>
     }
 
-    <!-- ══════════════════════════════════════════════ -->
-    <!-- HISTORIQUE                                    -->
-    <!-- ══════════════════════════════════════════════ -->
-    @if (activeTab() === 'history') {
-      <div class="hist-section">
-        <div class="dash-header">
-          <h2>Historique des passages</h2>
-          <button class="btn-ref" (click)="loadHistory()">🔄</button>
+    @if (result()!.type === 'success') {
+      <div class="res-card res-charge" (click)="clearResult()">
+        <div class="res-top">
+          <span class="res-ico">🔴</span>
+          <div>
+            <strong>Baguet {{ result()!.codeBaguet }}</strong>
+            <span class="pill pill-r">{{ result()!.status }}</span>
+          </div>
         </div>
 
-        @if (history().length === 0) {
-          <div class="empty">📋 Aucun enregistrement</div>
-        }
-
-        @for (item of history(); track item.codeBaguet + item.dateEntree) {
-          <div class="hist-item" [class.en-cours]="!item.dateSortie">
-            <div class="hist-top">
-              <span class="hist-code">🏷️ {{ item.codeBaguet }}</span>
-              <span class="hist-plant">🌱 {{ item.codePlant }}</span>
-              <span class="hist-status" [class.hs-red]="!item.dateSortie" [class.hs-green]="item.dateSortie">
-                {{ item.dateSortie ? '✅ Terminé' : '🔴 En cours' }}
-              </span>
-            </div>
-            @if (item.client) {
-              <div class="hist-client">👤 {{ item.client }}</div>
-            }
-            <div class="hist-dates">
-              <span>↓ {{ formatDate(item.dateEntree) }}</span>
-              @if (item.dateSortie) { <span>↑ {{ formatDate(item.dateSortie) }}</span> }
-            </div>
+        <div class="info-grid">
+          <div class="info">
+            <span>📋 Plan</span>
+            <strong>{{ result()!.codePlant || '—' }}</strong>
           </div>
-        }
+          <div class="info">
+            <span>👤 Client</span>
+            <strong>{{ result()!.client || '—' }}</strong>
+          </div>
+          <div class="info">
+            <span>📋 OT</span>
+            <strong>{{ result()!.ot || '—' }}</strong>
+          </div>
+          <div class="info">
+            <span>📦 Item</span>
+            <strong>{{ result()!.item || '—' }}</strong>
+          </div>
+          <div class="info">
+            <span>🔢 Ordre</span>
+            <strong>{{ result()!.ordre || '—' }}</strong>
+          </div>
+          <div class="info">
+            <span>🚗 Type</span>
+            <strong>{{ result()!.typeContrepartie || '—' }}</strong>
+          </div>
+        </div>
+
+        <small class="close-hint">Appuyer pour fermer</small>
       </div>
     }
 
-  </div>
+  }
+
 </div>

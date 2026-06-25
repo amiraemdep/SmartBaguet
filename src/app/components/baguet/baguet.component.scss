@@ -443,3 +443,27 @@ $shadow-lg:   0 10px 15px -3px rgba(0,0,0,.1);
   .snack-error   .mdc-snackbar__surface { background: #b91c1c !important; }
   .snack-warn    .mdc-snackbar__surface { background: #d97706 !important; }
 }
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 20spx;
+}
+
+.logo-icon {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.logo p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #666;
+}
