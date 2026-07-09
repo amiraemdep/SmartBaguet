@@ -29,8 +29,11 @@ interface BaguetResult {
 })
 export class SupervisorComponent implements AfterViewInit, OnDestroy {
 
-  // ⚠️ Mets ici l'IP réelle de ton PC (ipconfig → carte Wi-Fi), PAS localhost
-  private readonly API = 'https://172.16.37.36:7128/api/baguet';
+  private readonly API = '/api/baguet';
+
+  // ✅ Format attendu du code baguet : exactement 8 chiffres.
+  // Ajuste cette regex si ton format réel est différent (ex: lettres autorisées).
+  private readonly CODE_BAGUET_REGEX = /^\d{8}$/;
 
   @ViewChild('videoEl') videoEl!: ElementRef<HTMLVideoElement>;
 
@@ -40,6 +43,8 @@ export class SupervisorComponent implements AfterViewInit, OnDestroy {
 
   private codeReader = new BrowserMultiFormatReader();
   private scanningPaused = false;
+
+  // (double-confirmation désactivée temporairement pour diagnostic — voir handleRawCode)
 
   scanning      = signal(false);
   result        = signal<BaguetResult | null>(null);
@@ -60,14 +65,13 @@ export class SupervisorComponent implements AfterViewInit, OnDestroy {
   }
 
   // =====================================================
-  // CAMERA + SCAN (ZXing gère caméra ET décodage en continu)
+  // CAMERA + SCAN
   // =====================================================
 
   async startCamera(): Promise<void> {
     this.cameraError.set('');
 
     try {
-      // Liste des caméras disponibles, on préfère celle arrière ("environment")
       const devices = await this.codeReader.listVideoInputDevices();
       const backCamera = devices.find(d =>
         /back|rear|environment/i.test(d.label)
@@ -82,11 +86,10 @@ export class SupervisorComponent implements AfterViewInit, OnDestroy {
           if (this.scanningPaused) return;
 
           if (result) {
-            const code = result.getText();
-            console.log('✅ CODE DÉTECTÉ PAR ZXING:', code);
-            this.onCodeDetected(code);
+            const code = result.getText().trim().toUpperCase();
+            console.log('📷 Lecture brute ZXing:', code);
+            this.handleRawCode(code);
           }
-          // NotFoundException est normal : ça veut juste dire "rien détecté sur cette frame"
           if (err && !(err instanceof NotFoundException)) {
             console.error('Erreur scan:', err);
           }
@@ -94,7 +97,6 @@ export class SupervisorComponent implements AfterViewInit, OnDestroy {
       );
 
       console.log('✅ Caméra et scanner ZXing démarrés avec succès');
-
       this.cameraActive.set(true);
       this.cdr.detectChanges();
 
@@ -111,16 +113,34 @@ export class SupervisorComponent implements AfterViewInit, OnDestroy {
     this.cameraActive.set(false);
   }
 
-  private onCodeDetected(code: string): void {
+  // =====================================================
+  // VALIDATION + DOUBLE CONFIRMATION
+  // =====================================================
+
+  /**
+   * Reçoit chaque lecture brute de ZXing et déclenche la recherche API
+   * si le code respecte le format attendu (8 chiffres).
+   * (La double-confirmation a été retirée temporairement — trop stricte,
+   * elle empêchait tout résultat de s'afficher. À réintroduire plus tard
+   * si besoin, avec une fenêtre plus large.)
+   */
+  private handleRawCode(code: string): void {
+    if (!this.CODE_BAGUET_REGEX.test(code)) {
+      console.warn('⚠️ Code rejeté (format invalide) :', code);
+      return;
+    }
+    this.onCodeConfirmed(code);
+  }
+
+  private onCodeConfirmed(code: string): void {
     if (this.scanning() || this.scanningPaused) return;
 
     this.scanningPaused = true;
 
     if ('vibrate' in navigator) navigator.vibrate([50, 30, 50]);
 
-    this.lookupCode(code.trim().toUpperCase());
+    this.lookupCode(code);
 
-    // Reprend le scan après 3s (pour scanner un nouveau baguet)
     setTimeout(() => {
       this.scanningPaused = false;
     }, 3000);

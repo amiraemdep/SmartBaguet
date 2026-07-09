@@ -51,7 +51,8 @@ export class ScannCodeComponent implements OnInit, OnDestroy {
   private cdr      = inject(ChangeDetectorRef);
   private destroy$ = new Subject<void>();
 
-  private readonly API = 'http://localhost:5000/api/baguet';
+  //private readonly API = 'http://localhost:7128/api/baguet';
+  private readonly API = '/api/baguet';
 
   // ── State ──────────────────────────────────────────────────────
   activeTab   = signal<Tab>('dashboard');

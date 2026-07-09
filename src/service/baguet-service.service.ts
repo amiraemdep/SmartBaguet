@@ -10,7 +10,7 @@ export class BaguetServiceService {
 
 
 
-  api = 'https://172.16.37.36:7128/api/baguet';
+  api = 'http://172.16.37.36:7128/api/baguet';
 
 
   marriage(data: any): Observable<any> {

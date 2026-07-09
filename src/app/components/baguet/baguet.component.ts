@@ -44,8 +44,11 @@ export class BaguetComponent implements OnInit {
   private snack  = inject(MatSnackBar);
   data: any = null;
   scannedCode: string = '';
-  private readonly API = 'https://172.16.37.36:7128/api/baguet';
-  private API2 = 'https://172.16.37.36:7128/api/chef';
+  //private readonly API = 'http://172.16.37.36:7128/api/baguet';
+  private readonly API = '/api/baguet';
+  private readonly API2 = '/api/chef';
+
+  //private API2 = 'http://172.16.37.36:7128/api/chef';
 
   // ── State ────────────────────────────────────────────────────────────
 activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = signal(false);

@@ -46,8 +46,14 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+            "options": {
+                    "allowedHosts": [".ngrok-free.dev"],
+
+                    "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
-            "production": { "buildTarget": "smart-baguet-front:build:production" },
+            "production": { "buildTarget": "smart-baguet-front:build:production",      "proxyConfig": "proxy.conf.json"
+ },
             "development": { "buildTarget": "smart-baguet-front:build:development" }
           },
           "defaultConfiguration": "development"
