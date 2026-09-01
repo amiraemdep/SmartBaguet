@@ -7,7 +7,10 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+
 type Tab = 'scan' | 'dashboard' | 'history' | 'alerts';
+
 interface ScanResult {
   type: string;
   codeBaguet?: string;
@@ -41,11 +44,15 @@ interface Alert {
   selector: 'app-scann-code',
   standalone: true,
   imports: [  CommonModule,
-    ZXingScannerModule,ReactiveFormsModule],
+    ZXingScannerModule,ReactiveFormsModule,RouterLinkActive,RouterLink,],
   templateUrl: './scann-code.component.html',
   styleUrl: './scann-code.component.css'
 })
 export class ScannCodeComponent implements OnInit, OnDestroy {
+  modules = [
+    { path: '/baguet', label: 'Baguet', icon: '🏷️', desc: 'Mariage / Vider / Temps' },
+    { path: '/ldm-emplacement', label: 'LDM Emplacement', icon: '📍', desc: 'Association LDM ↔ emplacement' }
+  ];
   private http = inject(HttpClient);
   private fb       = inject(FormBuilder);
   private cdr      = inject(ChangeDetectorRef);

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed,OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -8,6 +8,11 @@ import { MatTooltip, MatTooltipModule } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { ScannCodeComponent } from '../baguet/scann-code/scann-code.component';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { startWith } from 'rxjs';
+import { BaguetServiceService } from '../../../service/baguet-service.service';
+import { Router } from '@angular/router';
+
 interface MarriageDto {
   codeBaguet: string;
   codePlant: string;
@@ -20,6 +25,8 @@ interface HistoryItem {
   client?: string;
   dateEntree: string;
   dateSortie?: string;
+   tempsExecution: number | null;
+  typeAffectation: string | null;
 }
 
 @Component({
@@ -39,6 +46,11 @@ interface HistoryItem {
   styleUrl: './baguet.component.scss'
 })
 export class BaguetComponent implements OnInit {
+private timerInterval: any = null;
+now = signal<Date>(new Date());
+  constructor(
+  private baguetService: BaguetServiceService,private router: Router
+) {}
   private http   = inject(HttpClient);
   private fb     = inject(FormBuilder);
   private snack  = inject(MatSnackBar);
@@ -51,7 +63,12 @@ export class BaguetComponent implements OnInit {
   //private API2 = 'http://172.16.37.36:7128/api/chef';
 
   // ── State ────────────────────────────────────────────────────────────
-activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = signal(false);
+activeTab = signal<'mariage' | 'vider' | 'scan' | 'temps'>('mariage');
+
+
+loading       = signal(false);
+
+
   showClient    = signal(false);
   lastResult    = signal<any>(null);
   history       = signal<HistoryItem[]>([]);
@@ -70,13 +87,43 @@ activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = si
 
   ngOnInit() {
     this.loadHistory();
+ this.timerInterval = setInterval(() => {
+    this.now.set(new Date());
+  }, 60000);
 
+  this.mariageForm.get('codePlant')?.valueChanges.subscribe(() => {
+    this.showClient.set(false);
+  });
     // Afficher le champ client si c'est un nouveau plant
     this.mariageForm.get('codePlant')?.valueChanges.subscribe(() => {
       this.showClient.set(false);
     });
   }
+// Signal pour le texte de recherche et le filtre statut
+searchText = signal('');
+filterStatus = signal<'tous' | 'en_cours' | 'vide'>('tous');
 
+// Historique filtré calculé automatiquement
+filteredHistory = computed(() => {
+  const text = this.searchText().toLowerCase().trim();
+  const status = this.filterStatus();
+
+  return this.history().filter(item => {
+    // Filtre texte
+    const matchText = !text ||
+      item.codeBaguet?.toLowerCase().includes(text) ||
+      item.codePlant?.toLowerCase().includes(text) ||
+      item.client?.toLowerCase().includes(text);
+
+    // Filtre statut
+    const matchStatus =
+      status === 'tous' ||
+      (status === 'en_cours' && !item.dateSortie) ||
+      (status === 'vide' && !!item.dateSortie);
+
+    return matchText && matchStatus;
+  });
+});
   // ── MARIAGE ───────────────────────────────────────────────────────────
   onMariage() {
     if (this.mariageForm.invalid) return;
@@ -117,7 +164,11 @@ activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = si
       }
     });
   }
-
+ ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+  }
   // ── VIDER ─────────────────────────────────────────────────────────────
   onVider() {
     if (this.viderForm.invalid) return;
@@ -150,15 +201,14 @@ activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = si
   }
 
   // ── Historique ────────────────────────────────────────────────────────
-  loadHistory() {
-    this.http.get<HistoryItem[]>(`${this.API}/history`).subscribe({
-      next: (data) => this.history.set(data.slice(0, 10)),
-      error: () => {} // silencieux si endpoint absent
-    });
-  }
-
+ loadHistory() {
+  this.http.get<HistoryItem[]>(`${this.API}/historytemp`).subscribe({
+    next: (data) => this.history.set(data.slice(0, 10)),
+    error: () => {}
+  });
+}
   // ── Utils ─────────────────────────────────────────────────────────────
-  setTab(tab: 'mariage' | 'vider') {
+setTab(tab: 'mariage' | 'vider' | 'scan' | 'temps') {
     this.activeTab.set(tab);
     this.lastResult.set(null);
   }
@@ -184,7 +234,6 @@ activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = si
 
     this.getDetails(result);
   }
-
   // 📡 CALL BACKEND
   getDetails(code: string) {
     this.http.get(`${this.API2}/details/${code}`)
@@ -199,4 +248,124 @@ activeTab = signal<'mariage' | 'vider' | 'scan'>('mariage');  loading       = si
         }
       });
   }
+
+  tempsForm = this.fb.group({
+  codePlant: ['', Validators.required],
+  tempsExecution: [
+    null as number | null,
+    [
+      Validators.required,
+      Validators.min(1)
+    ]
+  ]
+});
+
+
+// --- Signal réactif qui calcule l'affectation en direct pendant la saisie ---
+private tempsValue = toSignal(
+  this.tempsForm.get('tempsExecution')!.valueChanges.pipe(startWith(null)),
+  { initialValue: null }
+);
+
+previewAffectation = computed(() => {
+  const t = this.tempsValue();
+  if (!t || t <= 0) return null;
+  return t <= 20 ? 'Ligne' : 'PlaceFixe';
+});
+
+tempsInvalid(): boolean {
+  return this.tempsForm.invalid || this.loading();
+}
+// --- Pré-remplissage si le plan a déjà un temps enregistré ---
+loadExistingTemps() {
+  const codePlant = this.tempsForm.get('codePlant')?.value;
+  if (!codePlant) return;
+
+  this.baguetService.getTempsExecution(codePlant).subscribe({
+    next: (res) => {
+      if (res?.tempsExecution) {
+        this.tempsForm.patchValue({ tempsExecution: res.tempsExecution }, { emitEvent: true });
+      }
+    },
+    error: () => {
+      // Plan pas encore enregistré ou sans temps — on ignore silencieusement
+    }
+  });
+}
+
+// --- Soumission ---
+onTempsExecution() {
+  if (this.tempsForm.invalid) {
+    this.tempsForm.markAllAsTouched();
+    return;
+  }
+
+  this.loading.set(true);
+  const { codePlant, tempsExecution } = this.tempsForm.value;
+
+  this.baguetService.setTempsExecution(codePlant!, tempsExecution!).subscribe({
+    next: (res) => {
+      this.lastResult.set({
+        type: 'temps',
+        message: res.message,
+      success: true,                 // ✅ ajouté
+
+        codePlant: res.codePlant,
+        typeAffectation: res.typeAffectation
+      });
+      this.tempsForm.reset();
+      this.loading.set(false);
+      this.loadHistory(); // si vous voulez rafraîchir l'historique
+    },
+    error: (err) => {
+      this.loading.set(false);
+      this.lastResult.set({
+        type: 'temps',
+                success: false,                // ✅ ajouté
+
+        message: err?.error?.message ?? "Erreur lors de l'enregistrement du temps.",
+        codePlant,
+        typeAffectation: null
+      });
+    }
+  });
+}
+
+// Calcule le temps écoulé depuis dateEntree
+elapsedTime(dateEntree: string): string {
+  const start = new Date(dateEntree).getTime();
+  const diff = this.now().getTime() - start;
+
+  if (diff < 0) return '0min';
+
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  return `${minutes}min`;
+}
+
+// Détecte si le baguet est en retard (plus de 60 minutes par défaut)
+isLate(item: HistoryItem): boolean {
+  if (item.dateSortie) return false;
+  const start = new Date(item.dateEntree).getTime();
+  const diff = this.now().getTime() - start;
+  const limit = item.tempsExecution
+    ? item.tempsExecution * 60000
+    : 60 * 60000; // 60 min par défaut si pas de temps défini
+  return diff > limit;
+}
+// ============================================================
+// À AJOUTER 2 : dans votre service (baguet.service.ts)
+// ============================================================
+setTempsExecution(codePlant: string, tempsExecution: number) {
+  return this.http.post<any>(`/api/baguet/temps-execution`, { codePlant, tempsExecution });
+}
+
+getTempsExecution(codePlant: string) {
+  return this.http.get<any>(`/api/baguet/temps-execution/${codePlant}`);
+}
+goEmplacement() {
+  this.router.navigate(['/ldm-emplacement']);
+}
 }

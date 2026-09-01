@@ -467,3 +467,256 @@ $shadow-lg:   0 10px 15px -3px rgba(0,0,0,.1);
   font-size: 0.8rem;
   color: #666;
 }
+/* ============================================================
+   À AJOUTER dans le fichier .scss/.css du component baguet-app
+   (à côté des styles existants .panel-header.green / .red,
+   .result-green / .result-red, .btn-action.green / .red)
+   ============================================================ */
+
+/* En-tête du panel "Temps d'exécution" */
+.panel-header.blue {
+  background: #e8f1fd;
+  border-left: 4px solid #2f7fe0;
+}
+
+/* Bouton d'action */
+.btn-action.blue {
+  background: #2f7fe0;
+}
+.btn-action.blue:hover:not(:disabled) {
+  background: #2568bd;
+}
+
+/* Aperçu affectation en temps réel */
+.info-box.info-ligne {
+  background: #e8f1fd;
+  border-left: 4px solid #2f7fe0;
+  color: #1a4d8f;
+}
+.info-box.info-fixe {
+  background: #fff2e6;
+  border-left: 4px solid #e08a2f;
+  color: #8f5a1a;
+}
+
+/* Carte résultat */
+.result-card.result-blue {
+  background: #e8f1fd;
+  border-left: 4px solid #2f7fe0;
+}
+.result-card.result-orange {
+  background: #fff2e6;
+  border-left: 4px solid #e08a2f;
+}
+/* ============================================================
+   À AJOUTER dans le fichier .scss/.css du component baguet-app
+   (à côté des styles existants .panel-header.green / .red,
+   .result-green / .result-red, .btn-action.green / .red)
+   ============================================================ */
+
+/* En-tête du panel "Temps d'exécution" */
+.panel-header.blue {
+  background: #e8f1fd;
+  border-left: 4px solid #2f7fe0;
+}
+
+/* Bouton d'action */
+.btn-action.blue {
+  background: #2f7fe0;
+}
+.btn-action.blue:hover:not(:disabled) {
+  background: #2568bd;
+}
+
+/* Aperçu affectation en temps réel */
+.info-box.info-ligne {
+  background: #e8f1fd;
+  border-left: 4px solid #2f7fe0;
+  color: #1a4d8f;
+}
+.info-box.info-fixe {
+  background: #fff2e6;
+  border-left: 4px solid #e08a2f;
+  color: #8f5a1a;
+}
+
+/* Carte résultat */
+.result-card.result-blue {
+  background: #e8f1fd;
+  border-left: 4px solid #2f7fe0;
+}
+.result-card.result-orange {
+  background: #fff2e6;
+  border-left: 4px solid #e08a2f;
+}
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.history-affectation {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.fixe {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.ligne {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+/* ============================================================
+   FIX 4 — CSS du badge d'affectation
+   Remplace history-affectation-badge.css précédent
+   (le template utilise class="fixe", pas "place-fixe")
+   ============================================================ */
+
+.history-affectation {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  margin-left: 6px;
+  display: inline-block;
+}
+.history-affectation.ligne {
+  background: #e8f1fd;
+  color: #1a4d8f;
+}
+.history-affectation.fixe {
+  background: #fff2e6;
+  color: #8f5a1a;
+}
+.result-card.result-error {
+  background: #fdecea;
+  border-left: 4px solid #d33;
+}
+.history-filters {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-wrap {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  gap: 6px;
+
+  .search-icon { font-size: 13px; }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    outline: none;
+    color: #374151;
+
+    &::placeholder { color: #9ca3af; }
+  }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    line-height: 1;
+
+    &:hover { color: #374151; }
+  }
+}
+
+.status-filters {
+  display: flex;
+  gap: 6px;
+}
+
+.status-btn {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+  font-size: 11px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+
+  &:active { transform: scale(0.97); }
+
+  &.active {
+    background: #374151;
+    color: #fff;
+    border-color: #374151;
+  }
+
+  &.status-en-cours.active {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+  }
+
+  &.status-vide.active {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #86efac;
+  }
+}
+
+.results-count {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
+}
+.history-chrono {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  border: 1px solid #86efac;
+
+  .chrono-icon { font-size: 13px; }
+
+  .chrono-time {
+    font-size: 12px;
+    font-weight: 600;
+    color: #15803d;
+    font-family: monospace;
+  }
+
+  .late-badge {
+    font-size: 11px;
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #fca5a5;
+    margin-left: auto;
+  }
+
+  &.late {
+    background: #fef2f2;
+    border-color: #fca5a5;
+
+    .chrono-time {
+      color: #b91c1c;
+    }
+  }
+}

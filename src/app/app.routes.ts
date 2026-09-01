@@ -19,4 +19,9 @@ export const routes: Routes = [
       import('./pages/supervisor/supervisor.component')
         .then(m => m.SupervisorComponent)
   },
+  {
+  path: 'ldm-emplacement',
+  loadComponent: () => import('./components/baguet/ldm-emplacement/ldm-emplacement.component')
+    .then(m => m.LdmEmplacementComponent)
+}
 ];

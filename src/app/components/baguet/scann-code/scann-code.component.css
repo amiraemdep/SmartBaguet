@@ -26,3 +26,24 @@
     width: 100% !important;
   }
 }
+.btn-op {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #1976d2;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: .2s;
+}
+
+.btn-op:hover {
+  background: #1565c0;
+  transform: translateY(-1px);
+}

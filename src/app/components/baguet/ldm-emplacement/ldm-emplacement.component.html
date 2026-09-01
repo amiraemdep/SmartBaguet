@@ -1,0 +1,160 @@
+<!-- ============================================================
+     ldm-plant.component.html
+     ============================================================ -->
+<div class="ldm-app">
+
+  <div class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <img src="assets/emde.png" alt="EMDEP" class="logo-icon" />
+        <div>
+          <h1>EMDEP</h1>
+          <p>Association Plan ↔ LDM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="main-panel">
+
+      <div class="panel">
+        <div class="panel-header purple">
+          <span class="panel-icon">📦</span>
+          <div>
+            <h2>Affecter un LDM au Plan</h2>
+            <p>Scannez le plan existant, puis affectez-lui son code LDM</p>
+          </div>
+        </div>
+
+        <form [formGroup]="ldmForm" (ngSubmit)="onAssocier()" class="scan-form">
+
+          <!-- Code Plant -->
+          <div class="scan-field">
+            <label class="scan-label">
+              <span class="step-num">1</span>
+              Code Plan
+            </label>
+            <div class="input-wrap">
+              <span class="input-icon">📋</span>
+              <input
+                formControlName="codePlant"
+                class="scan-input"
+                placeholder="Scanner le code plan existant…"
+                autocomplete="off"
+                autofocus
+                (blur)="loadPlantInfo()"
+              />
+            </div>
+            @if (ldmForm.get('codePlant')?.invalid && ldmForm.get('codePlant')?.touched) {
+              <span class="field-error">Code plan requis</span>
+            }
+          </div>
+
+          <!-- Infos plant trouvé -->
+          @if (plantInfo()) {
+            <div class="ldm-info-card">
+              @if (plantInfo()!.client) {
+                <p>👤 Client : <strong>{{ plantInfo()!.client }}</strong></p>
+              }
+              @if (plantInfo()!.ot) {
+                <p>📋 OT : <strong>{{ plantInfo()!.ot }}</strong></p>
+              }
+              @if (plantInfo()!.codeLdmActuel) {
+                <p>📦 LDM déjà affecté : <strong>{{ plantInfo()!.codeLdmActuel }}</strong></p>
+              } @else {
+                <p class="ldm-no-emplacement">📦 Aucun LDM affecté pour l'instant</p>
+              }
+            </div>
+          }
+          @if (plantNotFound()) {
+            <div class="ldm-info-card ldm-error">
+              ❌ Plan introuvable — il doit déjà exister (créé via Mariage)
+            </div>
+          }
+
+          <!-- Code LDM -->
+          <div class="scan-field">
+            <label class="scan-label">
+              <span class="step-num">2</span>
+              Code LDM
+            </label>
+            <div class="input-wrap">
+              <span class="input-icon">📦</span>
+              <input
+                formControlName="codeLdm"
+                class="scan-input"
+                placeholder="Scanner ou saisir le code LDM…"
+                autocomplete="off"
+              />
+            </div>
+            @if (ldmForm.get('codeLdm')?.invalid && ldmForm.get('codeLdm')?.touched) {
+              <span class="field-error">Code LDM requis</span>
+            }
+          </div>
+
+          <button type="submit" class="btn-action purple" [disabled]="ldmForm.invalid || loading()">
+            @if (loading()) {
+              <span class="spinner"></span>
+              Traitement…
+            } @else {
+              📦 Affecter le LDM
+            }
+          </button>
+
+        </form>
+      </div>
+
+      @if (lastResult()) {
+        <div class="result-card" [class.result-purple]="lastResult()!.success" [class.result-error]="!lastResult()!.success">
+          <div class="result-icon">{{ lastResult()!.success ? '✅' : '❌' }}</div>
+          <div class="result-body">
+            <strong>{{ lastResult()!.message }}</strong>
+            @if (lastResult()!.success) {
+              <p>📋 Plan : <strong>{{ lastResult()!.codePlant }}</strong></p>
+              <p>📦 LDM : <strong>{{ lastResult()!.codeLdm }}</strong></p>
+            }
+          </div>
+        </div>
+      }
+
+    </div>
+
+    <!-- HISTORIQUE / RECHERCHE MAGASIN -->
+    <div class="history-panel">
+      <div class="history-header">
+        <h3>🔍 Recherche magasin (Plan ↔ LDM)</h3>
+        <button class="btn-refresh" (click)="loadHistorique()" title="Rafraîchir">🔄</button>
+      </div>
+
+      <div class="input-wrap search-wrap">
+        <span class="input-icon">🔍</span>
+        <input
+          class="scan-input"
+          placeholder="Rechercher par plan ou LDM…"
+          [formControl]="searchControl"
+        />
+      </div>
+
+      @if (historique().length === 0) {
+        <div class="history-empty">Aucun résultat</div>
+      }
+
+      @for (item of historique(); track item.codePlant + item.codeLdm) {
+        <div class="history-item">
+          <div class="history-top">
+            <span class="history-plant">📋 {{ item.codePlant }}</span>
+            <span class="history-affectation ligne">📦 {{ item.codeLdm }}</span>
+          </div>
+          @if (item.client) {
+            <div class="history-client">👤 {{ item.client }}</div>
+          }
+          <div class="history-dates">
+            <span>↓ {{ formatDate(item.dateAffectation) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

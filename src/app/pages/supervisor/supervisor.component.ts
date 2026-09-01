@@ -181,4 +181,7 @@ export class SupervisorComponent implements AfterViewInit, OnDestroy {
   goOperator(): void {
     this.router.navigate(['/operator']);
   }
+  goEmplacement() {
+  this.router.navigate(['/ldm-emplacement']);
+}
 }

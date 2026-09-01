@@ -24,4 +24,23 @@ export class BaguetServiceService {
   vider(code: string): Observable<any> {
     return this.http.post(`${this.api}/vider/${code}`, {});
   }
+  setTempsExecution(codePlant: string, tempsExecution: number) {
+  return this.http.post<{
+    codePlant: string;
+    tempsExecution: number;
+    typeAffectation: 'Ligne' | 'PlaceFixe';
+    message: string;
+  }>(`${this.api}/Baguet/temps-execution`, { codePlant, tempsExecution });
+}
+// Cherchez cette méthode et vérifiez l'URL exacte
+getHistory() {
+  return this.http.get<any[]>(`${this.api}/Baguet/history`); // ⚠️ probablement l'ancienne URL
+}
+getTempsExecution(codePlant: string) {
+  return this.http.get<{
+    codePlant: string;
+    tempsExecution: number | null;
+    typeAffectation: string | null;
+  }>(`${this.api}/Baguet/temps-execution/${codePlant}`);
+}
 }

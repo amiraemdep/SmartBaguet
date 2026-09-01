@@ -1,0 +1,168 @@
+/* ============================================================
+   ldm-emplacement.component.css — VERSION COMPLÈTE
+   Remplacez entièrement l'ancien fichier par celui-ci.
+   Autonome : ne dépend d'aucun CSS externe.
+   ============================================================ */
+
+.ldm-app {
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f5f7;
+  min-height: 100%;
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+}
+.header-left { display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  height: 36px;
+  width: 36px;
+  object-fit: contain;
+}
+.logo h1 { font-size: 1.1rem; font-weight: 700; margin: 0; color: #222; }
+.logo p { font-size: 0.75rem; color: #888; margin: 0; }
+
+/* ── LAYOUT ──────────────────────────────────────────────── */
+.content {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  flex-wrap: wrap;
+}
+.main-panel { flex: 2; min-width: 320px; display: flex; flex-direction: column; gap: 16px; }
+.history-panel { flex: 1; min-width: 280px; }
+
+/* ── PANEL / FORM ────────────────────────────────────────── */
+.panel {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+.panel-header.purple { background: #f3ecfb; border-left: 4px solid #7c3aed; }
+.panel-icon { font-size: 1.6rem; }
+.panel-header h2 { font-size: 1.05rem; margin: 0; color: #222; }
+.panel-header p { font-size: 0.8rem; color: #777; margin: 2px 0 0; }
+
+.scan-form { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.scan-field { display: flex; flex-direction: column; gap: 6px; }
+.scan-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; font-weight: 600; color: #444;
+}
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #7c3aed; color: #fff; font-size: 0.7rem; font-weight: 700;
+}
+.input-wrap {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid #ddd; border-radius: 8px;
+  padding: 10px 14px; background: #fafafa;
+  transition: border-color 0.15s;
+}
+.input-wrap:focus-within { border-color: #7c3aed; background: #fff; }
+.input-icon { font-size: 1rem; }
+.scan-input {
+  border: none; outline: none; background: transparent;
+  flex: 1; font-size: 0.95rem; color: #222;
+}
+.field-error { font-size: 0.75rem; color: #d33; }
+
+/* ── BUTTON ──────────────────────────────────────────────── */
+.btn-action {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; border-radius: 8px;
+  padding: 12px; font-size: 0.95rem; font-weight: 600; color: #fff;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-action.purple { background: #7c3aed; }
+.btn-action.purple:hover:not(:disabled) { background: #6427d1; }
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── LDM INFO CARD ───────────────────────────────────────── */
+.ldm-info-card {
+  background: #f7f7fb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+}
+.ldm-info-card p { margin: 4px 0; color: #333; }
+.ldm-no-emplacement { color: #888; font-style: italic; }
+
+/* ── RESULT CARD ─────────────────────────────────────────── */
+.result-card {
+  display: flex; gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.result-card.result-purple { background: #f3ecfb; border-left: 4px solid #7c3aed; }
+.result-icon { font-size: 1.4rem; }
+.result-body strong { display: block; margin-bottom: 4px; color: #222; }
+.result-body p { margin: 2px 0; font-size: 0.85rem; color: #555; }
+
+/* ── HISTORY PANEL ───────────────────────────────────────── */
+.history-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.history-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.history-header h3 { font-size: 0.95rem; margin: 0; color: #222; }
+.btn-refresh {
+  border: none; background: transparent; cursor: pointer;
+  font-size: 1rem; color: #7c3aed;
+}
+.history-empty { font-size: 0.85rem; color: #999; text-align: center; padding: 20px 0; }
+
+.history-item {
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #f7f7f9;
+  border-left: 3px solid #ccc;
+}
+.history-item.active { border-left-color: #7c3aed; background: #f7f2fd; }
+.history-top {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.85rem; margin-bottom: 4px;
+}
+.history-plant { font-weight: 600; color: #333; }
+.history-status { font-size: 0.75rem; }
+.status-charge { color: #7c3aed; }
+.status-vide { color: #999; }
+.history-dates { display: flex; gap: 12px; font-size: 0.75rem; color: #888; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .content { flex-direction: column; }
+}

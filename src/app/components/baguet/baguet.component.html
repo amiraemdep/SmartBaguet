@@ -28,6 +28,9 @@
         </div>
       }
     </div>
+  <button class="btn-op" (click)="goEmplacement()">
+      📍 Emplacement
+    </button>
   </div>
 
   <!-- ── TABS ───────────────────────────────────────────────────── -->
@@ -42,7 +45,11 @@
       <span class="tab-icon">📤</span>
       Vider (Déchargement)
     </button>
-
+  <button class="tab" [class.active]="activeTab() === 'temps'"
+            (click)="setTab('temps')">
+      <span class="tab-icon">⏱️</span>
+      Temps d'exécution
+    </button>
   </div>
 
   <div class="content">
@@ -236,6 +243,118 @@
 
   </div>
 }
+<!-- ============================================================
+     À AJOUTER 1 : dans la barre d'onglets (.tabs), après "Vider"
+     ============================================================ -->
+
+
+<!-- ============================================================
+     À AJOUTER 2 : dans .main-panel, après le bloc @if (activeTab() === 'vider')
+     ============================================================ -->
+@if (activeTab() === 'temps') {
+  <div class="panel">
+    <div class="panel-header blue">
+      <span class="panel-icon">⏱️</span>
+      <div>
+        <h2>Temps d'exécution — Affectation Plan</h2>
+        <p>Scannez le plan puis saisissez son temps de référence</p>
+      </div>
+    </div>
+
+    <form [formGroup]="tempsForm" (ngSubmit)="onTempsExecution()" class="scan-form">
+
+      <!-- Scan Plan -->
+      <div class="scan-field">
+        <label class="scan-label">
+          <span class="step-num">1</span>
+          Code Plan
+        </label>
+        <div class="input-wrap">
+          <span class="input-icon">📋</span>
+          <input
+            formControlName="codePlant"
+            class="scan-input"
+            placeholder="Scanner ou saisir le code plan…"
+            autocomplete="off"
+            autofocus
+            (blur)="loadExistingTemps()"
+          />
+        </div>
+        @if (tempsForm.get('codePlant')?.invalid && tempsForm.get('codePlant')?.touched) {
+          <span class="field-error">Code plan requis</span>
+        }
+      </div>
+
+      <!-- Temps de référence -->
+      <div class="scan-field">
+        <label class="scan-label">
+          <span class="step-num">2</span>
+          Temps de référence (minutes)
+        </label>
+        <div class="input-wrap">
+          <span class="input-icon">⏱️</span>
+          <input
+            formControlName="tempsExecution"
+            type="number"
+            min="1"
+            class="scan-input"
+            placeholder="Ex : 15"
+            autocomplete="off"
+          />
+        </div>
+        @if (tempsForm.get('tempsExecution')?.invalid && tempsForm.get('tempsExecution')?.touched) {
+          <span class="field-error">Temps requis (nombre entier positif)</span>
+        }
+      </div>
+
+      <!-- Aperçu de l'affectation en temps réel -->
+      @if (previewAffectation()) {
+        <div class="info-box"
+             [class.info-ligne]="previewAffectation() === 'Ligne'"
+             [class.info-fixe]="previewAffectation() === 'PlaceFixe'">
+          <span>{{ previewAffectation() === 'Ligne' ? '🟦' : '🟧' }}</span>
+          Affectation prévue :
+          <strong>{{ previewAffectation() === 'Ligne' ? 'Ligne' : 'Place fixe' }}</strong>
+          ({{ previewAffectation() === 'Ligne' ? '1 – 20 min' : '> 20 min' }})
+        </div>
+      }
+
+      <button type="submit" class="btn-action blue" [disabled]="tempsInvalid()">
+        @if (loading()) {
+          <span class="spinner"></span>
+          Traitement…
+        } @else {
+          ⏱️ Enregistrer le temps
+        }
+      </button>
+
+    </form>
+  </div>
+}
+
+
+<!-- ============================================================
+     À AJOUTER 3 (optionnel) : dans le bloc résultat général,
+     pour afficher aussi le résultat "temps"
+     ============================================================ -->
+@if (lastResult() && lastResult().type === 'temps') {
+  <div class="result-card"
+       [class.result-blue]="lastResult().success && lastResult().typeAffectation === 'Ligne'"
+       [class.result-orange]="lastResult().success && lastResult().typeAffectation === 'PlaceFixe'"
+       [class.result-error]="!lastResult().success">
+    <div class="result-icon">{{ lastResult().success ? '✅' : '❌' }}</div>
+    <div class="result-body">
+      <strong>{{ lastResult().message }}</strong>
+      <p>📋 Plan : <strong>{{ lastResult().codePlant }}</strong></p>
+      @if (lastResult().success) {
+        <p>📍 Affectation :
+          <strong>{{ lastResult().typeAffectation === 'Ligne' ? 'Ligne' : 'Place fixe' }}</strong>
+        </p>
+      }
+    </div>
+  </div>
+}
+
       <!-- ── RÉSULTAT ─────────────────────────────────────────────── -->
       @if (lastResult()) {
         <div class="result-card" [class.result-green]="lastResult().type === 'mariage'"
@@ -258,38 +377,105 @@
     </div>
 
     <!-- ── HISTORIQUE ───────────────────────────────────────────── -->
-    <div class="history-panel">
-      <div class="history-header">
-        <h3>📊 Historique récent</h3>
-        <button class="btn-refresh" (click)="loadHistory()" title="Rafraîchir">🔄</button>
-      </div>
+  <div class="history-panel">
+  <div class="history-header">
+    <h3>📊 Historique récent</h3>
+    <button class="btn-refresh" (click)="loadHistory()" title="Rafraîchir">🔄</button>
+  </div>
 
-      @if (history().length === 0) {
-        <div class="history-empty">Aucun enregistrement</div>
-      }
-
-      @for (item of history(); track item.codeBaguet + item.dateEntree) {
-        <div class="history-item" [class.active]="!item.dateSortie">
-          <div class="history-top">
-            <span class="history-baguet">🏷️ {{ item.codeBaguet }}</span>
-            <span class="history-plant">📋 {{ item.codePlant }}</span>
-            <span class="history-status" [class.status-charge]="!item.dateSortie"
-                  [class.status-vide]="item.dateSortie">
-              {{ item.dateSortie ? '🟢 VIDÉ' : '🔴 EN COURS' }}
-            </span>
-          </div>
-          <div class="history-dates">
-            <span>↓ {{ formatDate(item.dateEntree) }}</span>
-            @if (item.dateSortie) {
-              <span>↑ {{ formatDate(item.dateSortie) }}</span>
-            }
-          </div>
-          @if (item.client) {
-            <div class="history-client">👤 {{ item.client }}</div>
-          }
-        </div>
+  <!-- FILTRES -->
+  <div class="history-filters">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Baguet, plan, client..."
+        [value]="searchText()"
+        (input)="searchText.set($any($event.target).value)" />
+      @if (searchText()) {
+        <button class="clear-btn" (click)="searchText.set('')">✕</button>
       }
     </div>
+
+    <div class="status-filters">
+      <button class="status-btn"
+        [class.active]="filterStatus() === 'tous'"
+        (click)="filterStatus.set('tous')">
+        Tous
+      </button>
+      <button class="status-btn status-en-cours"
+        [class.active]="filterStatus() === 'en_cours'"
+        (click)="filterStatus.set('en_cours')">
+        🔴 En cours
+      </button>
+      <button class="status-btn status-vide"
+        [class.active]="filterStatus() === 'vide'"
+        (click)="filterStatus.set('vide')">
+        🟢 Vidé
+      </button>
+    </div>
+
+    @if (searchText() || filterStatus() !== 'tous') {
+      <div class="results-count">
+        {{ filteredHistory().length }} résultat(s)
+      </div>
+    }
+  </div>
+
+  <!-- LISTE -->
+  @if (filteredHistory().length === 0) {
+    <div class="history-empty">
+      @if (searchText() || filterStatus() !== 'tous') {
+        Aucun résultat pour cette recherche
+      } @else {
+        Aucun enregistrement
+      }
+    </div>
+  }
+
+  @for (item of filteredHistory(); track item.codeBaguet + item.dateEntree) {
+    <div class="history-item" [class.active]="!item.dateSortie">
+      <div class="history-top">
+        <span class="history-baguet">🏷️ {{ item.codeBaguet }}</span>
+        <span class="history-plant">📋 {{ item.codePlant }}</span>
+        <span class="history-status"
+          [class.status-charge]="!item.dateSortie"
+          [class.status-vide]="item.dateSortie">
+          {{ item.dateSortie ? '🟢 VIDÉ' : '🔴 EN COURS' }}
+        </span>
+
+        @if (item.typeAffectation === 'PlaceFixe') {
+          <span class="history-affectation fixe">🟧 Place fixe</span>
+        }
+        @if (item.typeAffectation === 'Ligne') {
+          <span class="history-affectation ligne">🟦 Ligne</span>
+        }
+      </div>
+
+    <div class="history-dates">
+  <span>↓ {{ formatDate(item.dateEntree) }}</span>
+  @if (item.dateSortie) {
+    <span>↑ {{ formatDate(item.dateSortie) }}</span>
+  }
+</div>
+
+@if (!item.dateSortie) {
+  <div class="history-chrono" [class.late]="isLate(item)">
+    <span class="chrono-icon">⏱️</span>
+    <span class="chrono-time">{{ elapsedTime(item.dateEntree) }} en cours</span>
+    @if (isLate(item)) {
+      <span class="late-badge">⚠️ Retard</span>
+    }
+  </div>
+}
+
+      @if (item.client) {
+        <div class="history-client">👤 {{ item.client }}</div>
+      }
+    </div>
+  }
+</div>
 
   </div>
 </div>
